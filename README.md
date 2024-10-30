@@ -1,2 +1,2 @@
 # Mandelbrot-Set
-Render the Mandelbrot Set in Python
+This is my first attempt at rendering an image using Point Clouds in 3d
