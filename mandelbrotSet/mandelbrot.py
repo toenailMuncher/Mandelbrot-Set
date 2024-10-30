@@ -19,6 +19,8 @@ def plot(x, X, y, Y, cmap='Blues'):
 
     for i in range(50):
         z = z * z + c
+        z[np.isnan(z)] = 0
+        z[np.isinf(z)] = 0
         idx = (np.absolute(z) > 4) & (escape == 0)
         escape[idx] = i
 
