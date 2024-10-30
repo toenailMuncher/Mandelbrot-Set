@@ -1,56 +1,32 @@
-import pygame
 import numpy as np
-import math
+import pygame
+from pygame.locals import QUIT, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
+
+# Initialize Pygame
+pygame.init()
 
 # Screen dimensions
-WIDTH, HEIGHT = 640, 360
-
-# Mandelbrot parameters
-max_iterations = 100
-angle = 0
-
-# Initialize colors array
-colors = []
-
-# Set up colors for each iteration
-for n in range(max_iterations):
-    hue = math.sqrt(n / max_iterations)
-    r = int(255 * hue)
-    g = int(255 * (1 - hue))
-    b = 150
-    colors.append((r, g, b))
-
-# Initialize pygame
-pygame.init()
+WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Julia Set")
-clock = pygame.time.Clock()
 
-# Main loop
+# Maximum number of iterations for each point on the complex plane
+max_iterations = 100
 
-running = True
-while running:
-    screen.fill((255, 255, 255))
+# Colors to be used for each possible iteration count
+colors = np.zeros((max_iterations, 3), dtype=int)
 
-    # Calculate parameters for Julia Set
-    ca = math.cos(angle * 3.213)
-    cb = math.sin(angle)
-    angle += 0.02
+# Create the colors to be used for each possible iteration count
+for n in range(max_iterations):
+    hu = np.sqrt(n / max_iterations)
+    colors[n] = (int(hu * 255), int(hu * 255), int(150))
 
-    # Complex plane dimensions
-    w = 5
-    h = w * HEIGHT / WIDTH
-
-    xmin = -w / 2
-    ymin = -h / 2
-    xmax = xmin + w
-    ymax = ymin + h
-
-    # Calculate step increments for complex plane
+def julia_set(screen, ca, cb, zoom, offset_x, offset_y):
+    xmin, xmax = -zoom + offset_x, zoom + offset_x
+    ymin, ymax = -zoom + offset_y, zoom + offset_y
     dx = (xmax - xmin) / WIDTH
     dy = (ymax - ymin) / HEIGHT
 
-    # Iterate over each pixel
     y = ymin
     for j in range(HEIGHT):
         x = xmin
@@ -67,22 +43,54 @@ while running:
                 b = twoab + cb
                 n += 1
 
-            # Set pixel color
             if n == max_iterations:
-                color = (0, 0, 0)  # Black for points that never escape
+                color = (0, 0, 0)
             else:
-                color = colors[n]  # Precomputed color for each iteration
+                color = colors[n]
 
             screen.set_at((i, j), color)
             x += dx
         y += dy
 
-    pygame.display.flip()
-    clock.tick(30)  # Limit frame rate to 30 FPS
+def main():
+    ca, cb = -0.7, 0.27015
+    zoom = 1.5
+    offset_x, offset_y = 0.0, 0.0
+    running = True
+    dragging = False
+    last_mouse_pos = None
 
-    # Event handling (close the window)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    clock = pygame.time.Clock()
 
-pygame.quit()
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    dragging = True
+                    last_mouse_pos = event.pos
+                elif event.button == 4:  # Mouse wheel up
+                    zoom /= 1.1
+                elif event.button == 5:  # Mouse wheel down
+                    zoom *= 1.1
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:  # Left mouse button
+                    dragging = False
+            elif event.type == pygame.MOUSEMOTION:
+                if dragging:
+                    dx = (event.pos[0] - last_mouse_pos[0]) * (zoom * 2 / WIDTH)
+                    dy = (event.pos[1] - last_mouse_pos[1]) * (zoom * 2 / HEIGHT)
+                    offset_x -= dx
+                    offset_y -= dy
+                    last_mouse_pos = event.pos
+
+        screen.fill((0, 0, 0))
+        julia_set(screen, ca, cb, zoom, offset_x, offset_y)
+        pygame.display.flip()
+        clock.tick(30)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
